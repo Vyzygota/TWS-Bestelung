@@ -12,7 +12,7 @@ The system features a modern user interface, smart delivery date calculation (wi
 
 ## 🚀 Live Demo / Testversion
 
-**👉 [App im Browser öffnen (GitHub Pages)](https://vyzygota.github.io/tws-laundry-system/)**  
+**👉 [App im Browser öffnen (GitHub Pages)](https://vyzygota.github.io/TWS-Bestelung/)**  
 *(Hinweis: Wenn dieser Link nicht funktioniert, muss in den GitHub-Einstellungen unter "Pages" der Branch "main" ausgewählt werden).*
 
 **💡 Lokaler Test:**  
