@@ -12,7 +12,7 @@ The system features a modern user interface, smart delivery date calculation (wi
 
 ## 🚀 Live Demo / Testversion
 
-**👉 [App im Browser öffnen (GitHub Pages)](https://vyzygota.github.io/TWS-Bestelung/)**  
+**👉 <a href="https://vyzygota.github.io/TWS-Bestelung/" target="_blank">App im Browser öffnen / Otwórz w nowym oknie (GitHub Pages)</a>**  
 *(Hinweis: Wenn dieser Link nicht funktioniert, muss in den GitHub-Einstellungen unter "Pages" der Branch "main" ausgewählt werden).*
 
 **💡 Lokaler Test:**  
