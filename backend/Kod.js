@@ -1,7 +1,7 @@
 function doPost(e) {
   // Get references to the Google Sheets tabs
   var sheetOrders = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Orders");
-  var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Klienci_Baza");
+  var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Clients");
 
   try {
     if (!e || !e.postData) {
@@ -255,11 +255,10 @@ function doOptions(e) {
 function doGet(e) {
   if (e.parameter.action === "getClient" && e.parameter.clientId) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheetName = "Klienci_Baza";
+    var sheetName = "Clients"; // Zmienione z Klienci_Baza na Clients zgodnie ze zdjęciem
     var sheetClients = ss.getSheetByName(sheetName);
 
     if (!sheetClients) {
-      // Diagnostic: list available sheets if target not found
       var allSheets = ss.getSheets().map(function(s) { return s.getName(); }).join(", ");
       return ContentService.createTextOutput(JSON.stringify({ 
         error: "Sheet '" + sheetName + "' not found.",
@@ -270,7 +269,8 @@ function doGet(e) {
     var clientData = sheetClients.getDataRange().getValues();
     var targetId = String(e.parameter.clientId).trim();
 
-    for (var i = 1; i < clientData.length; i++) {
+    // Zaczynamy od i = 2 (czyli 3. wiersz w Excelu), bo wiersz 1 i 2 to nagłówki
+    for (var i = 2; i < clientData.length; i++) {
       var currentId = String(clientData[i][0]).trim();
       if (currentId === targetId) {
         var clientInfo = {
