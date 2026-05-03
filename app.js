@@ -3,7 +3,7 @@
  * Refactored and improved frontend logic.
  */
 
-const WEB_APP_URL = "API_KEY";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz6x5TpOniGU1zynGBygnoULw-Ufn3vOXB184XHb8QJzNCAFu9xQ4q4-0F-kC5dZk3G/exec";
 
 // Translations Dictionary
 const dict = {
