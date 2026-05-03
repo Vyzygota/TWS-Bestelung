@@ -224,6 +224,12 @@ async function checkAndFetchClient() {
 
         idBoxes.forEach(box => box.classList.add('bg-blue-50', 'animate-pulse'));
 
+        const errorDiv = document.getElementById('clientError');
+        if (errorDiv) {
+            errorDiv.textContent = "";
+            errorDiv.classList.add('hidden');
+        }
+
         try {
             const url = `${WEB_APP_URL}?action=getClient&clientId=${clientId}`;
             console.log("Fetching client data from:", url);
@@ -246,14 +252,26 @@ async function checkAndFetchClient() {
                     calcDeliveryDate();
                 } else {
                     console.warn("Client not found or error in data:", data.error);
+                    if (errorDiv) {
+                        errorDiv.textContent = data.error || "Client not found";
+                        errorDiv.classList.remove('hidden');
+                    }
                     idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
                 }
             } else {
                 console.error("Server returned status:", response.status);
+                if (errorDiv) {
+                    errorDiv.textContent = "Server error: " + response.status;
+                    errorDiv.classList.remove('hidden');
+                }
                 idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
             }
         } catch (e) {
             console.error("Fetch error details:", e);
+            if (errorDiv) {
+                errorDiv.textContent = "Connection error. Check console (F12).";
+                errorDiv.classList.remove('hidden');
+            }
             idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
         }
     } else {
