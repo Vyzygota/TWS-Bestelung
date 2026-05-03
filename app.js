@@ -226,10 +226,13 @@ async function checkAndFetchClient() {
 
         try {
             const url = `${WEB_APP_URL}?action=getClient&clientId=${clientId}`;
+            console.log("Fetching client data from:", url);
             const response = await fetch(url);
 
             if (response.ok) {
                 const data = await response.json();
+                console.log("Client data received:", data);
+                
                 if (data && !data.error) {
                     if (data.name) nameInput.value = data.name;
                     if (data.email) emailInput.value = data.email;
@@ -242,13 +245,15 @@ async function checkAndFetchClient() {
                     });
                     calcDeliveryDate();
                 } else {
+                    console.warn("Client not found or error in data:", data.error);
                     idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
                 }
             } else {
+                console.error("Server returned status:", response.status);
                 idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
             }
         } catch (e) {
-            console.error("Error fetching client data:", e);
+            console.error("Fetch error details:", e);
             idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
         }
     } else {
