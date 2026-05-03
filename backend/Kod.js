@@ -1,9 +1,12 @@
 function doPost(e) {
   // Get references to the Google Sheets tabs
   var sheetOrders = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Orders");
-  var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Clients");
+  var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Klienci_Baza");
 
   try {
+    if (!e || !e.postData) {
+      return ContentService.createTextOutput("ERROR: No postData").setMimeType(ContentService.MimeType.TEXT);
+    }
     // Parse incoming JSON payload from the frontend
     var params = JSON.parse(e.postData.contents);
 
