@@ -253,33 +253,40 @@ function doOptions(e) {
 
 // Handle GET requests to fetch data (e.g. Client Info)
 function doGet(e) {
-  // Always set CORS headers in the response if possible (GAS handles this mostly via redirect)
-
   if (e.parameter.action === "getClient" && e.parameter.clientId) {
-    var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Klienci_Baza");
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = "Klienci_Baza";
+    var sheetClients = ss.getSheetByName(sheetName);
 
-    if (sheetClients) {
-      var clientData = sheetClients.getDataRange().getValues();
-      // Assuming headers in row 1, data starts from row 2 (index 1)
-      for (var i = 1; i < clientData.length; i++) {
-        // Col A (0): ID, Col B (1): Name, Col C (2): Style, Col D (3): Trasa, Col E (4): City, Col F (5): Email
-        if (String(clientData[i][0]) === String(e.parameter.clientId)) {
-          var clientInfo = {
-            id: clientData[i][0],
-            name: clientData[i][1] || "",
-            style: clientData[i][2] || "",
-            email: clientData[i][5] || "", // Email z kolumny F (indeks 5)
-            city: clientData[i][4] || clientData[i][3] || "" // Miejscowość z kolumny E (lub D jeśli E puste)
-          };
+    if (!sheetClients) {
+      // Diagnostic: list available sheets if target not found
+      var allSheets = ss.getSheets().map(function(s) { return s.getName(); }).join(", ");
+      return ContentService.createTextOutput(JSON.stringify({ 
+        error: "Sheet '" + sheetName + "' not found.",
+        availableSheets: allSheets
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
-          return ContentService.createTextOutput(JSON.stringify(clientInfo))
-            .setMimeType(ContentService.MimeType.JSON);
-        }
+    var clientData = sheetClients.getDataRange().getValues();
+    var targetId = String(e.parameter.clientId).trim();
+
+    for (var i = 1; i < clientData.length; i++) {
+      var currentId = String(clientData[i][0]).trim();
+      if (currentId === targetId) {
+        var clientInfo = {
+          id: clientData[i][0],
+          name: clientData[i][1] || "",
+          style: clientData[i][2] || "",
+          email: clientData[i][5] || "",
+          city: clientData[i][4] || clientData[i][3] || ""
+        };
+
+        return ContentService.createTextOutput(JSON.stringify(clientInfo))
+          .setMimeType(ContentService.MimeType.JSON);
       }
     }
 
-    // If not found
-    return ContentService.createTextOutput(JSON.stringify({ error: "Client not found" }))
+    return ContentService.createTextOutput(JSON.stringify({ error: "Client ID " + targetId + " not found in database." }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
