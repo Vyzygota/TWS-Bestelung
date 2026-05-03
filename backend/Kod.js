@@ -286,8 +286,15 @@ function doGet(e) {
       }
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ error: "Client ID " + targetId + " not found in database." }))
-      .setMimeType(ContentService.MimeType.JSON);
+    var foundIdsSample = [];
+    for (var i = 2; i < Math.min(clientData.length, 10); i++) {
+      foundIdsSample.push("Row " + (i+1) + ": '" + clientData[i][0] + "'");
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ 
+      error: "Client ID '" + targetId + "' not found.",
+      debug: "Found these in first rows: " + foundIdsSample.join(" | ")
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 
   return ContentService.createTextOutput("TWS Bestelung Backend - GET OK").setMimeType(ContentService.MimeType.TEXT);

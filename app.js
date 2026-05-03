@@ -253,7 +253,9 @@ async function checkAndFetchClient() {
                 } else {
                     console.warn("Client not found or error in data:", data.error);
                     if (errorDiv) {
-                        errorDiv.textContent = data.error || "Client not found";
+                        let msg = data.error || "Client not found";
+                        if (data.debug) msg += " DEBUG: " + data.debug;
+                        errorDiv.textContent = msg;
                         errorDiv.classList.remove('hidden');
                     }
                     idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
