@@ -3,7 +3,7 @@
  * Refactored and improved frontend logic.
  */
 
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz6x5TpOniGU1zynGBygnoULw-Ufn3vOXB184XHb8QJzNCAFu9xQ4q4-0F-kC5dZk3G/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZsT2WpaWXZNKxXiAdHkPjzyCCPmlMLPsEn3N6tKD3jGboUKoSwh0SoWwX9XdEYh8Y/exec";
 
 // Translations Dictionary
 const dict = {
@@ -16,6 +16,7 @@ const dict = {
         sec3: 'Tischwäsche', tab1: 'Servietten 50x50', tab2: 'Tischdecke 80x80', tab3: 'Tischdecke 100x100', tab4: 'Tischdecke 130x130', tab5: 'Tischdecke 130x170', tab6: 'Tischdecke 130x200',
         sec4: 'Farbige Bettwäsche', selectColor: 'Farbe auswählen', col1: 'Gelb', col2: 'Beige', col3: 'Rosa', col4: 'Weiß-Blau', col5: 'Weiß-Gelb',
         btnSubmit: 'Kostenpflichtig bestellen', footer: 'Alle Rechte vorbehalten.',
+        notes: 'Zusätzliche Anmerkungen',
         errReq: 'Bitte füllen Sie Name und E-Mail aus!', errId: 'Die Kundennummer muss genau 6 Ziffern enthalten!', errEmpty: 'Bitte wählen Sie mindestens einen Artikel aus!',
         msgSending: 'Bestellung wird gesendet...', msgSuccess: 'Erfolgreich gesendet! Ihre Bestellung wurde erfasst.', msgError: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
     },
@@ -28,6 +29,7 @@ const dict = {
         sec3: 'Obrusy', tab1: 'Serwetki 50x50', tab2: 'Obrus 80x80', tab3: 'Obrus 100x100', tab4: 'Obrus 130x130', tab5: 'Obrus 130x170', tab6: 'Obrus 130x200',
         sec4: 'Pościele kolorowe', selectColor: 'Wybierz kolor', col1: 'Żółty', col2: 'Beżowy', col3: 'Różowy', col4: 'Biało-niebieskie', col5: 'Biało-żółte',
         btnSubmit: 'Zamów z obowiązkiem zapłaty', footer: 'Wszelkie prawa zastrzeżone.',
+        notes: 'Uwagi',
         errReq: 'Proszę wypełnić wymagane pola (Nazwa, Email)!', errId: 'Numer klienta musi składać się dokładnie z 6 cyfr!', errEmpty: 'Proszę wybrać przynajmniej jeden produkt!',
         msgSending: 'Wysyłanie zamówienia...', msgSuccess: 'Sukces! Zamówienie zostało pomyślnie złożone.', msgError: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.'
     },
@@ -40,6 +42,7 @@ const dict = {
         sec3: 'Tablecloths', tab1: 'Napkins 50x50', tab2: 'Tablecloth 80x80', tab3: 'Tablecloth 100x100', tab4: 'Tablecloth 130x130', tab5: 'Tablecloth 130x170', tab6: 'Tablecloth 130x200',
         sec4: 'Colored Bed Linen', selectColor: 'Select Color', col1: 'Yellow', col2: 'Beige', col3: 'Pink', col4: 'White-Blue', col5: 'White-Yellow',
         btnSubmit: 'Submit Order', footer: 'All rights reserved.',
+        notes: 'Additional Notes',
         errReq: 'Please fill in Name and E-mail!', errId: 'Customer ID must be exactly 6 digits!', errEmpty: 'Please select at least one item!',
         msgSending: 'Sending order...', msgSuccess: 'Success! Order successfully submitted.', msgError: 'An error occurred while sending. Please try again.'
     }
@@ -330,11 +333,15 @@ function submitOrder() {
 
     fetch(WEB_APP_URL, {
         method: 'POST',
-        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(() => {
+    .then(response => {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.text();
+    })
+    .then(text => {
+        if (text !== 'OK') throw new Error(text);
         submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-green-500 font-pj rounded-xl";
         submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${dict[lang]['msgSuccess']}`;
         document.getElementById('orderForm').reset();

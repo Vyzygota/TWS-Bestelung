@@ -1,9 +1,12 @@
 function doPost(e) {
-  // Get references to the Google Sheets tabs
-  var sheetOrders = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Orders");
-  var sheetClients = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Clients");
+  var sheetOrders = null;
+  var sheetClients = null;
 
   try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    sheetOrders = ss.getSheetByName("Orders");
+    sheetClients = ss.getSheetByName("Clients");
+
     if (!e || !e.postData) {
       return ContentService.createTextOutput("ERROR: No postData").setMimeType(ContentService.MimeType.TEXT);
     }
@@ -27,8 +30,9 @@ function doPost(e) {
         if (String(clientData[i][0]) === String(params.clientId)) {
           clientFound = true;
           // If style in DB is not empty, use it. Otherwise, keep the default 4mm.
-          if (clientData[i][2] !== "") {
-            style = clientData[i][2];
+          var cellStyle = clientData[i][2].toString().trim();
+          if (cellStyle !== "") {
+            style = cellStyle;
           }
           break; // Stop searching once found
         }
@@ -240,15 +244,14 @@ function doPost(e) {
     return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
 
   } catch (error) {
-    // Log the error in the sheet for debugging purposes
-    sheetOrders.appendRow([new Date(), "ERROR", error.toString(), JSON.stringify(e)]);
+    var errorDetails = error.toString() + " | postData: " + (e && e.postData ? e.postData.contents : 'brak danych');
+    if (sheetOrders) {
+      sheetOrders.appendRow([new Date(), "ERROR", errorDetails]);
+    } else {
+      Logger.log("CRITICAL: Orders sheet not found. Error: " + errorDetails);
+    }
     return ContentService.createTextOutput("ERROR").setMimeType(ContentService.MimeType.TEXT);
   }
-}
-
-// Handle CORS preflight requests
-function doOptions(e) {
-  return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
 }
 
 // Handle GET requests to fetch data (e.g. Client Info)
@@ -269,8 +272,8 @@ function doGet(e) {
     var clientData = sheetClients.getDataRange().getValues();
     var targetId = String(e.parameter.clientId).trim();
 
-    // Zaczynamy od i = 2 (czyli 3. wiersz w Excelu), bo wiersz 1 i 2 to nagłówki
-    for (var i = 2; i < clientData.length; i++) {
+    // Row 1 is the header, data starts at row 2 (index 1)
+    for (var i = 1; i < clientData.length; i++) {
       var currentId = String(clientData[i][0]).trim();
       if (currentId === targetId) {
         var clientInfo = {
@@ -287,7 +290,7 @@ function doGet(e) {
     }
 
     var foundIdsSample = [];
-    for (var i = 2; i < Math.min(clientData.length, 10); i++) {
+    for (var i = 1; i < Math.min(clientData.length, 10); i++) {
       foundIdsSample.push("Row " + (i+1) + ": '" + clientData[i][0] + "'");
     }
 
