@@ -321,7 +321,7 @@ function submitOrder() {
     };
 
     // Validation: At least one item ordered
-    const itemKeys = Object.keys(payload).filter(k => k.match(/^[wtc]_/));
+    const itemKeys = Object.keys(payload).filter(k => k.match(/^(w_|t_|tb_|c_bed)/));
     const hasItems = itemKeys.some(k => parseInt(payload[k]) > 0);
     if (!hasItems) { alert(dict[lang]['errEmpty']); return; }
 
