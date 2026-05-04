@@ -4,6 +4,7 @@
  */
 
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZsT2WpaWXZNKxXiAdHkPjzyCCPmlMLPsEn3N6tKD3jGboUKoSwh0SoWwX9XdEYh8Y/exec";
+const API_KEY = "cc38db64bdab951fa5638d58d3063e47cc4ac57cb4c79fd7";
 
 // Translations Dictionary
 const dict = {
@@ -302,6 +303,7 @@ function submitOrder() {
     if (clientId.length !== 6 || !/^\d{6}$/.test(clientId)) { alert(dict[lang]['errId']); return; }
 
     const payload = {
+        apiKey: API_KEY,
         clientName: clientName,
         clientId: clientId,
         email: email,

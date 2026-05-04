@@ -13,6 +13,12 @@ function doPost(e) {
     // Parse incoming JSON payload from the frontend
     var params = JSON.parse(e.postData.contents);
 
+    // API key validation
+    var validKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    if (!validKey || !params.apiKey || params.apiKey !== validKey) {
+      return ContentService.createTextOutput("UNAUTHORIZED").setMimeType(ContentService.MimeType.TEXT);
+    }
+
     // 1. Generate a unique order number (e.g., TWS-260501-XXXX)
     var d = new Date();
     var datePart = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyMMdd");
@@ -301,3 +307,4 @@ function doGet(e) {
 
   return ContentService.createTextOutput("TWS Bestelung Backend - GET OK").setMimeType(ContentService.MimeType.TEXT);
 }
+
