@@ -333,15 +333,11 @@ function submitOrder() {
 
     fetch(WEB_APP_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(response => {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.text();
-    })
-    .then(text => {
-        if (text !== 'OK') throw new Error(text);
+    .then(() => {
         submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-green-500 font-pj rounded-xl";
         submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${dict[lang]['msgSuccess']}`;
         document.getElementById('orderForm').reset();
