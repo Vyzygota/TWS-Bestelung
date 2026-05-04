@@ -25,7 +25,7 @@ function doPost(e) {
 
     if (sheetClients) {
       var clientData = sheetClients.getDataRange().getValues();
-      for (var i = 1; i < clientData.length; i++) {
+      for (var i = 0; i < clientData.length; i++) {
         // Column A (index 0) is Client ID, Column C (index 2) is Style
         if (String(clientData[i][0]) === String(params.clientId)) {
           clientFound = true;
@@ -272,8 +272,7 @@ function doGet(e) {
     var clientData = sheetClients.getDataRange().getValues();
     var targetId = String(e.parameter.clientId).trim();
 
-    // Row 1 is the header, data starts at row 2 (index 1)
-    for (var i = 1; i < clientData.length; i++) {
+    for (var i = 0; i < clientData.length; i++) {
       var currentId = String(clientData[i][0]).trim();
       if (currentId === targetId) {
         var clientInfo = {
@@ -290,7 +289,7 @@ function doGet(e) {
     }
 
     var foundIdsSample = [];
-    for (var i = 1; i < Math.min(clientData.length, 10); i++) {
+    for (var i = 0; i < Math.min(clientData.length, 10); i++) {
       foundIdsSample.push("Row " + (i+1) + ": '" + clientData[i][0] + "'");
     }
 
