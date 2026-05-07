@@ -305,6 +305,14 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // SETUP: odczyt formuł z Raport_Ekspedycja, usunąć po użyciu
+  if (e.parameter.action === "readFormulas" && e.parameter.token === "7df71599148e6f7075a09ddbbb11c585") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Raport_Ekspedycja");
+    var formulas = sheet.getRange(1, 1, 5, sheet.getLastColumn()).getFormulas();
+    return ContentService.createTextOutput(JSON.stringify(formulas)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService.createTextOutput("TWS Bestelung Backend - GET OK").setMimeType(ContentService.MimeType.TEXT);
 }
 
