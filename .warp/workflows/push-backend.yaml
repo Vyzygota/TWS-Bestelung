@@ -1,0 +1,9 @@
+---
+name: "Push Backend (clasp)"
+command: "cd backend && clasp push"
+tags:
+  - deploy
+  - clasp
+  - backend
+description: "Pushes the Google Apps Script backend code to the cloud."
+author: "AntiGravity"

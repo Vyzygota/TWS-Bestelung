@@ -48,3 +48,6 @@ Dostępne skills (`.agents/skills/`):
 - **`deploy`** — jak wdrożyć zmiany backendu przez clasp
 - **`add-feature`** — jak dodać nową funkcję do formularza
 - **`fix-bug`** — jak diagnozować i naprawiać błędy
+
+**Używanie Warp Workflows:**
+Jako Agent (AntiGravity) w tym projekcie współpracuję z infrastrukturą narzędzia Warp. Przy wykonywaniu standardowych zadań (takich jak deploy backendu czy commitowanie) zawsze w pierwszej kolejności sprawdzam dostępne skrypty w folderze `.warp/workflows/` (np. `push-backend.yaml` lub `quick-commit.yaml`) i na ich podstawie generuję oraz wykonuję komendy. Zapewnia to, że współdzielimy te same procesy automatyzacji.

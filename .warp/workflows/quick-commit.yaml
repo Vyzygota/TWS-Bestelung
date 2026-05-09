@@ -1,0 +1,8 @@
+---
+name: "Quick Commit"
+command: "git add . && git commit -m \"{{commit_message}}\""
+tags:
+  - git
+  - commit
+description: "Stages all changes and creates a new commit with a custom message."
+author: "AntiGravity"
