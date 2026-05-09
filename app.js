@@ -18,8 +18,9 @@ const dict = {
         sec4: 'Farbige Bettwäsche', selectColor: 'Farbe auswählen', col1: 'Gelb', col2: 'Beige', col3: 'Rosa', col4: 'Weiß-Blau', col5: 'Weiß-Gelb',
         btnSubmit: 'Kostenpflichtig bestellen', footer: 'Alle Rechte vorbehalten.',
         notes: 'Zusätzliche Anmerkungen',
-        errReq: 'Bitte füllen Sie Name und E-Mail aus!', errId: 'Die Kundennummer muss genau 6 Ziffern enthalten!', errEmpty: 'Bitte wählen Sie mindestens einen Artikel aus!',
-        msgSending: 'Bestellung wird gesendet...', msgSuccess: 'Erfolgreich gesendet! Ihre Bestellung wurde erfasst.', msgError: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
+        errReq: 'Bitte füllen Sie Name und E-Mail aus!', errId: 'Die Kundennummer muss genau 6 Ziffern enthalten!', errEmpty: 'Bitte wählen Sie mindestens einen Artikel aus!', errCode: 'Bitte geben Sie den 4-stelligen Verifizierungscode ein!',
+        msgSending: 'Bestellung wird gesendet...', msgSuccess: 'Erfolgreich gesendet! Ihre Bestellung wurde erfasst.', msgError: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', errInvalidCode: 'Ungültiger Verifizierungscode.',
+        btnVerify: 'Daten abrufen & Code senden', verifyCode: 'Verifizierungscode (4 Ziffern)', verifyMsg: 'Code wurde an Ihre E-Mail gesendet.'
     },
     'pl': {
         clientData: 'Dane Zamawiającego', clientName: 'Nazwa Klienta', clientId: 'Nr klienta (6 cyfr)', email: 'Adres E-mail',
@@ -31,8 +32,9 @@ const dict = {
         sec4: 'Pościele kolorowe', selectColor: 'Wybierz kolor', col1: 'Żółty', col2: 'Beżowy', col3: 'Różowy', col4: 'Biało-niebieskie', col5: 'Biało-żółte',
         btnSubmit: 'Zamów z obowiązkiem zapłaty', footer: 'Wszelkie prawa zastrzeżone.',
         notes: 'Uwagi',
-        errReq: 'Proszę wypełnić wymagane pola (Nazwa, Email)!', errId: 'Numer klienta musi składać się dokładnie z 6 cyfr!', errEmpty: 'Proszę wybrać przynajmniej jeden produkt!',
-        msgSending: 'Wysyłanie zamówienia...', msgSuccess: 'Sukces! Zamówienie zostało pomyślnie złożone.', msgError: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.'
+        errReq: 'Proszę wypełnić wymagane pola (Nazwa, Email)!', errId: 'Numer klienta musi składać się dokładnie z 6 cyfr!', errEmpty: 'Proszę wybrać przynajmniej jeden produkt!', errCode: 'Proszę wprowadzić 4-cyfrowy kod weryfikacyjny!',
+        msgSending: 'Wysyłanie zamówienia...', msgSuccess: 'Sukces! Zamówienie zostało pomyślnie złożone.', msgError: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.', errInvalidCode: 'Nieprawidłowy kod weryfikacyjny.',
+        btnVerify: 'Pobierz dane i wyślij kod', verifyCode: 'Kod weryfikacyjny (4 cyfry)', verifyMsg: 'Kod został wysłany na Twój adres e-mail.'
     },
     'en': {
         clientData: 'Customer Data', clientName: 'Customer Name', clientId: 'Customer ID (6 digits)', email: 'E-mail address',
@@ -44,8 +46,9 @@ const dict = {
         sec4: 'Colored Bed Linen', selectColor: 'Select Color', col1: 'Yellow', col2: 'Beige', col3: 'Pink', col4: 'White-Blue', col5: 'White-Yellow',
         btnSubmit: 'Submit Order', footer: 'All rights reserved.',
         notes: 'Additional Notes',
-        errReq: 'Please fill in Name and E-mail!', errId: 'Customer ID must be exactly 6 digits!', errEmpty: 'Please select at least one item!',
-        msgSending: 'Sending order...', msgSuccess: 'Success! Order successfully submitted.', msgError: 'An error occurred while sending. Please try again.'
+        errReq: 'Please fill in Name and E-Mail!', errId: 'Customer ID must be exactly 6 digits!', errEmpty: 'Please select at least one item!', errCode: 'Please enter the 4-digit verification code!',
+        msgSending: 'Sending order...', msgSuccess: 'Success! Order successfully submitted.', msgError: 'An error occurred while sending. Please try again.', errInvalidCode: 'Invalid verification code.',
+        btnVerify: 'Get data & send code', verifyCode: 'Verification code (4 digits)', verifyMsg: 'Code has been sent to your email.'
     }
 };
 
@@ -217,71 +220,98 @@ idBoxes.forEach((box, index) => {
 /**
  * Fetch client data from Google Sheets
  */
-async function checkAndFetchClient() {
+function checkAndFetchClient() {
     let clientId = "";
     idBoxes.forEach(b => clientId += b.value);
 
+    const verifyBtn = document.getElementById('verifyBtn');
+    const verificationSection = document.getElementById('verificationSection');
+    
     if (clientId.length === 6) {
-        const nameInput = document.getElementById('clientName');
-        const emailInput = document.getElementById('email');
-        const cityInput = document.getElementById('mainCity');
+        verifyBtn.classList.remove('hidden');
+    } else {
+        verifyBtn.classList.add('hidden');
+        verificationSection.classList.add('hidden');
+        document.getElementById('clientName').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('mainCity').value = '';
+        document.getElementById('verificationCode').value = '';
+        idBoxes.forEach(box => box.classList.remove('bg-green-100', 'text-green-800', 'bg-blue-50', 'animate-pulse'));
+    }
+}
 
-        idBoxes.forEach(box => box.classList.add('bg-blue-50', 'animate-pulse'));
+async function sendVerificationCode() {
+    let clientId = "";
+    idBoxes.forEach(b => clientId += b.value);
+    
+    if (clientId.length !== 6) return;
 
-        const errorDiv = document.getElementById('clientError');
-        if (errorDiv) {
-            errorDiv.textContent = "";
-            errorDiv.classList.add('hidden');
-        }
+    const verifyBtn = document.getElementById('verifyBtn');
+    const errorDiv = document.getElementById('clientError');
+    const verificationSection = document.getElementById('verificationSection');
+    
+    const nameInput = document.getElementById('clientName');
+    const emailInput = document.getElementById('email');
+    const cityInput = document.getElementById('mainCity');
 
-        try {
-            const url = `${WEB_APP_URL}?action=getClient&clientId=${clientId}`;
-            console.log("Fetching client data from:", url);
-            const response = await fetch(url);
+    const lang = document.getElementById('langSwitch').value;
+    const originalBtnText = verifyBtn.innerHTML;
+    
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ...`;
+    
+    if (errorDiv) {
+        errorDiv.textContent = "";
+        errorDiv.classList.add('hidden');
+    }
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Client data received:", data);
+    try {
+        const url = `${WEB_APP_URL}?action=getClient&clientId=${clientId}&sendCode=true`;
+        console.log("Fetching and sending code:", url);
+        const response = await fetch(url);
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Client data received:", data);
+            
+            if (data && !data.error) {
+                if (data.name) nameInput.value = data.name;
+                if (data.email) emailInput.value = data.email;
+                if (data.city) cityInput.value = data.city;
+
+                idBoxes.forEach(box => {
+                    box.classList.remove('bg-blue-50');
+                    box.classList.add('bg-green-100', 'text-green-800');
+                    setTimeout(() => box.classList.remove('bg-green-100', 'text-green-800'), 2000);
+                });
+                calcDeliveryDate();
                 
-                if (data && !data.error) {
-                    if (data.name) nameInput.value = data.name;
-                    if (data.email) emailInput.value = data.email;
-                    if (data.city) cityInput.value = data.city;
-
-                    idBoxes.forEach(box => {
-                        box.classList.remove('animate-pulse', 'bg-blue-50');
-                        box.classList.add('bg-green-100', 'text-green-800');
-                        setTimeout(() => box.classList.remove('bg-green-100', 'text-green-800'), 2000);
-                    });
-                    calcDeliveryDate();
-                } else {
-                    console.warn("Client not found or error in data:", data.error);
-                    if (errorDiv) {
-                        let msg = data.error || "Client not found";
-                        if (data.debug) msg += " DEBUG: " + data.debug;
-                        errorDiv.textContent = msg;
-                        errorDiv.classList.remove('hidden');
-                    }
-                    idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
-                }
+                verifyBtn.classList.add('hidden');
+                verificationSection.classList.remove('hidden');
+                document.getElementById('verificationCode').focus();
             } else {
-                console.error("Server returned status:", response.status);
+                console.warn("Client not found or error:", data.error);
                 if (errorDiv) {
-                    errorDiv.textContent = "Server error: " + response.status;
+                    errorDiv.textContent = data.error || "Client not found";
                     errorDiv.classList.remove('hidden');
                 }
-                idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
             }
-        } catch (e) {
-            console.error("Fetch error details:", e);
+        } else {
+            console.error("Server returned status:", response.status);
             if (errorDiv) {
-                errorDiv.textContent = "Connection error. Check console (F12).";
+                errorDiv.textContent = "Server error: " + response.status;
                 errorDiv.classList.remove('hidden');
             }
-            idBoxes.forEach(box => box.classList.remove('animate-pulse', 'bg-blue-50'));
         }
-    } else {
-        idBoxes.forEach(box => box.classList.remove('bg-green-100', 'text-green-800', 'bg-blue-50', 'animate-pulse'));
+    } catch (e) {
+        console.error("Fetch error details:", e);
+        if (errorDiv) {
+            errorDiv.textContent = "Connection error. Check console (F12).";
+            errorDiv.classList.remove('hidden');
+        }
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = originalBtnText;
     }
 }
 
@@ -297,15 +327,18 @@ function submitOrder() {
     const clientName = document.getElementById('clientName').value.trim();
     const email = document.getElementById('email').value.trim();
     const clientId = Array.from(idBoxes).map(box => box.value).join('');
+    const verificationCode = document.getElementById('verificationCode').value.trim();
     const isDiffReceiver = document.getElementById('diffReceiver').checked;
 
     if (!clientName || !email) { alert(dict[lang]['errReq']); return; }
     if (clientId.length !== 6 || !/^\d{6}$/.test(clientId)) { alert(dict[lang]['errId']); return; }
+    if (verificationCode.length !== 4 || !/^\d{4}$/.test(verificationCode)) { alert(dict[lang]['errCode']); return; }
 
     const payload = {
         apiKey: API_KEY,
         clientName: clientName,
         clientId: clientId,
+        verificationCode: verificationCode,
         email: email,
         city: document.getElementById('mainCity').value,
         deliveryDate: document.getElementById('calcDate').getAttribute('data-excel-date'),
@@ -333,30 +366,50 @@ function submitOrder() {
     submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-blue-500 font-pj rounded-xl cursor-not-allowed opacity-90";
     submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ${dict[lang]['msgSending']}`;
 
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-    })
-    .then(() => {
-        submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-green-500 font-pj rounded-xl";
-        submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${dict[lang]['msgSuccess']}`;
-        document.getElementById('orderForm').reset();
-        idBoxes.forEach(box => box.value = '');
-        calcDeliveryDate();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-red-500 font-pj rounded-xl";
-        submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> ${dict[lang]['msgError']}`;
-    })
-    .finally(() => {
+    const resetBtn = () => {
         setTimeout(() => {
             submitBtn.disabled = false;
             submitBtn.className = originalBtnClass;
             submitBtn.innerHTML = originalBtnHTML;
         }, 4000);
+    };
+
+    // Step 1: Verify code via GET
+    fetch(`${WEB_APP_URL}?action=verifyCode&clientId=${clientId}&code=${verificationCode}`)
+    .then(async (response) => {
+        if (!response.ok) throw new Error("Connection Error");
+        const data = await response.json();
+        if (!data.valid) {
+            throw new Error(dict[lang]['errInvalidCode']);
+        }
+        
+        // Step 2: If code is valid, proceed with POST (no-cors)
+        return fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+        });
+    })
+    .then((postResponse) => {
+        if (!postResponse) return; // Means error was caught in previous step
+        
+        submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-green-500 font-pj rounded-xl";
+        submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${dict[lang]['msgSuccess']}`;
+        document.getElementById('orderForm').reset();
+        idBoxes.forEach(box => box.value = '');
+        document.getElementById('verificationSection').classList.add('hidden');
+        document.getElementById('verifyBtn').classList.add('hidden');
+        calcDeliveryDate();
+        resetBtn();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-red-500 font-pj rounded-xl";
+        // Show specific error if provided
+        const errMsg = error.message && (error.message.includes('ungültig') || error.message.includes('Invalid') || error.message.includes('Nieprawidłowy')) ? error.message : dict[lang]['msgError'];
+        submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> ${errMsg}`;
+        resetBtn();
     });
 }
 

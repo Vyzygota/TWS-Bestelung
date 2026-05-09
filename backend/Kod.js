@@ -19,6 +19,14 @@ function doPost(e) {
       return ContentService.createTextOutput("UNAUTHORIZED").setMimeType(ContentService.MimeType.TEXT);
     }
 
+    // Verification Code Validation
+    var cachedCode = CacheService.getScriptCache().get("VERIFY_" + params.clientId);
+    if (!cachedCode || cachedCode !== params.verificationCode) {
+       return ContentService.createTextOutput("INVALID_VERIFICATION_CODE").setMimeType(ContentService.MimeType.TEXT);
+    }
+    // Remove code from cache so it cannot be reused
+    CacheService.getScriptCache().remove("VERIFY_" + params.clientId);
+
     // 1. Generate a unique order number (e.g., TWS-260501-XXXX)
     var d = new Date();
     var datePart = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyMMdd");
@@ -260,19 +268,15 @@ function doPost(e) {
   }
 }
 
-// Handle GET requests to fetch data (e.g. Client Info)
+// Handle GET requests to fetch data and optionally send verification code
 function doGet(e) {
   if (e.parameter.action === "getClient" && e.parameter.clientId) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheetName = "Clients"; // Zmienione z Klienci_Baza na Clients zgodnie ze zdjęciem
+    var sheetName = "Clients"; 
     var sheetClients = ss.getSheetByName(sheetName);
 
     if (!sheetClients) {
-      var allSheets = ss.getSheets().map(function(s) { return s.getName(); }).join(", ");
-      return ContentService.createTextOutput(JSON.stringify({ 
-        error: "Sheet '" + sheetName + "' not found.",
-        availableSheets: allSheets
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ error: "Sheet '" + sheetName + "' not found." })).setMimeType(ContentService.MimeType.JSON);
     }
 
     var clientData = sheetClients.getDataRange().getValues();
@@ -289,20 +293,44 @@ function doGet(e) {
           city: clientData[i][4] || clientData[i][3] || ""
         };
 
-        return ContentService.createTextOutput(JSON.stringify(clientInfo))
-          .setMimeType(ContentService.MimeType.JSON);
+        // Verification logic
+        if (e.parameter.sendCode === "true") {
+           var clientEmail = clientInfo.email;
+           if (!clientEmail || clientEmail.trim() === "") {
+               return ContentService.createTextOutput(JSON.stringify({ error: "Brak adresu email dla tego klienta." })).setMimeType(ContentService.MimeType.JSON);
+           }
+           
+           // Generate 4-digit code
+           var code = Math.floor(1000 + Math.random() * 9000).toString();
+           
+           // Store in cache for 15 minutes (900 seconds)
+           CacheService.getScriptCache().put("VERIFY_" + targetId, code, 900);
+           
+           // Send Email
+           var subject = "TWS Rügen - Verifizierungscode / Kod weryfikacyjny";
+           var body = "Dein Verifizierungscode lautet / Twój kod weryfikacyjny to: " + code + "\n\nDieser Code ist 15 Minuten lang gültig.\nTen kod jest ważny przez 15 minut.";
+           try {
+             GmailApp.sendEmail(clientEmail, subject, body);
+           } catch (err) {
+             return ContentService.createTextOutput(JSON.stringify({ error: "Nie udało się wysłać emaila z kodem." })).setMimeType(ContentService.MimeType.JSON);
+           }
+        }
+
+        return ContentService.createTextOutput(JSON.stringify(clientInfo)).setMimeType(ContentService.MimeType.JSON);
       }
     }
 
-    var foundIdsSample = [];
-    for (var i = 0; i < Math.min(clientData.length, 10); i++) {
-      foundIdsSample.push("Row " + (i+1) + ": '" + clientData[i][0] + "'");
-    }
+    return ContentService.createTextOutput(JSON.stringify({ error: "Client ID '" + targetId + "' not found." })).setMimeType(ContentService.MimeType.JSON);
+  }
 
-    return ContentService.createTextOutput(JSON.stringify({ 
-      error: "Client ID '" + targetId + "' not found.",
-      debug: "Found these in first rows: " + foundIdsSample.join(" | ")
-    })).setMimeType(ContentService.MimeType.JSON);
+  // Verify verification code via GET before POSTing
+  if (e.parameter.action === "verifyCode" && e.parameter.clientId && e.parameter.code) {
+    var cachedCode = CacheService.getScriptCache().get("VERIFY_" + e.parameter.clientId);
+    if (cachedCode && cachedCode === String(e.parameter.code).trim()) {
+      return ContentService.createTextOutput(JSON.stringify({ valid: true })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({ valid: false })).setMimeType(ContentService.MimeType.JSON);
+    }
   }
 
   // SETUP: odczyt formuł z Raport_Ekspedycja, usunąć po użyciu

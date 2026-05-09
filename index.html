@@ -41,7 +41,7 @@
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 w-full">
-        <form id="orderForm" class="space-y-6" onsubmit="event.preventDefault(); submitOrder();">
+        <form id="orderForm" class="space-y-6" onsubmit="event.preventDefault(); submitOrder();" autocomplete="off">
 
             <!-- Customer Data Section -->
             <section class="glass-card rounded-2xl p-4 sm:p-6 relative overflow-hidden">
@@ -77,7 +77,16 @@
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" tabindex="6"
                                     class="client-id-box w-10 h-10 text-center text-lg font-bold rounded-lg premium-input">
                             </div>
+                            <button type="button" id="verifyBtn" class="mt-3 w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors hidden" onclick="sendVerificationCode()" data-i18n="btnVerify">Pobierz dane i wyślij kod</button>
                             <div id="clientError" class="text-rose-500 text-xs mt-2 hidden font-medium"></div>
+                        </div>
+
+                        <div id="verificationSection" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1"><span data-i18n="verifyCode">Weryfikationscode (4 Ziffern)</span> <span class="text-rose-500">*</span></label>
+                            <div class="flex space-x-2">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="verificationCode" tabindex="6" class="premium-input w-24 px-3 py-2 text-center text-xl font-bold tracking-widest rounded-lg text-slate-800" placeholder="____" autocomplete="off">
+                            </div>
+                            <p class="text-xs text-blue-600 mt-2 font-medium" data-i18n="verifyMsg">Code wurde an Ihre E-Mail gesendet.</p>
                         </div>
 
                         <div>
@@ -85,8 +94,8 @@
                                     data-i18n="clientName">Name des Kunden</span> <span
                                     class="text-rose-500">*</span></label>
                             <input type="text" id="clientName" required tabindex="7"
-                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800"
-                                placeholder="Firma / Name">
+                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800 bg-slate-100 cursor-not-allowed"
+                                placeholder="Firma / Name" readonly="true" autocomplete="off">
                         </div>
                     </div>
 
@@ -96,16 +105,16 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-1"><span
                                     data-i18n="email">E-Mail</span> <span class="text-rose-500">*</span></label>
                             <input type="email" id="email" required tabindex="8"
-                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800"
-                                placeholder="email@beispiel.de">
+                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800 bg-slate-100 cursor-not-allowed"
+                                placeholder="email@beispiel.de" readonly="true" autocomplete="off">
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1"><span data-i18n="city">Ort
                                     (Lieferung)</span></label>
                             <input type="text" id="mainCity" tabindex="9"
-                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800"
-                                placeholder="...">
+                                class="premium-input w-full rounded-lg px-3 py-2 text-slate-800 bg-slate-100 cursor-not-allowed"
+                                placeholder="..." readonly="true" autocomplete="off">
                         </div>
                     </div>
                 </div>
