@@ -20,7 +20,8 @@ const dict = {
         notes: 'Zusätzliche Anmerkungen',
         errReq: 'Bitte füllen Sie Name und E-Mail aus!', errId: 'Die Kundennummer muss genau 6 Ziffern enthalten!', errEmpty: 'Bitte wählen Sie mindestens einen Artikel aus!', errCode: 'Bitte geben Sie den 4-stelligen Verifizierungscode ein!',
         msgSending: 'Bestellung wird gesendet...', msgSuccess: 'Erfolgreich gesendet! Ihre Bestellung wurde erfasst.', msgError: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', errInvalidCode: 'Ungültiger Verifizierungscode.',
-        btnVerify: 'Daten abrufen & Code senden', verifyCode: 'Verifizierungscode (4 Ziffern)', verifyMsg: 'Code wurde an Ihre E-Mail gesendet.'
+        btnVerify: 'Daten abrufen & Code senden', verifyCode: 'Verifizierungscode (4 Ziffern)', verifyMsg: 'Code wurde an Ihre E-Mail gesendet.',
+        errBlocked: 'Konto für 30 Minuten gesperrt (zu viele Versuche).', errAttempts: 'Falscher Code. Verbleibende Versuche: '
     },
     'pl': {
         clientData: 'Dane Zamawiającego', clientName: 'Nazwa Klienta', clientId: 'Nr klienta (6 cyfr)', email: 'Adres E-mail',
@@ -34,7 +35,8 @@ const dict = {
         notes: 'Uwagi',
         errReq: 'Proszę wypełnić wymagane pola (Nazwa, Email)!', errId: 'Numer klienta musi składać się dokładnie z 6 cyfr!', errEmpty: 'Proszę wybrać przynajmniej jeden produkt!', errCode: 'Proszę wprowadzić 4-cyfrowy kod weryfikacyjny!',
         msgSending: 'Wysyłanie zamówienia...', msgSuccess: 'Sukces! Zamówienie zostało pomyślnie złożone.', msgError: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.', errInvalidCode: 'Nieprawidłowy kod weryfikacyjny.',
-        btnVerify: 'Pobierz dane i wyślij kod', verifyCode: 'Kod weryfikacyjny (4 cyfry)', verifyMsg: 'Kod został wysłany na Twój adres e-mail.'
+        btnVerify: 'Pobierz dane i wyślij kod', verifyCode: 'Kod weryfikacyjny (4 cyfry)', verifyMsg: 'Kod został wysłany na Twój adres e-mail.',
+        errBlocked: 'Konto zablokowane na 30 minut (zbyt wiele prób).', errAttempts: 'Błędny kod. Pozostałe próby: '
     },
     'en': {
         clientData: 'Customer Data', clientName: 'Customer Name', clientId: 'Customer ID (6 digits)', email: 'E-mail address',
@@ -48,7 +50,8 @@ const dict = {
         notes: 'Additional Notes',
         errReq: 'Please fill in Name and E-Mail!', errId: 'Customer ID must be exactly 6 digits!', errEmpty: 'Please select at least one item!', errCode: 'Please enter the 4-digit verification code!',
         msgSending: 'Sending order...', msgSuccess: 'Success! Order successfully submitted.', msgError: 'An error occurred while sending. Please try again.', errInvalidCode: 'Invalid verification code.',
-        btnVerify: 'Get data & send code', verifyCode: 'Verification code (4 digits)', verifyMsg: 'Code has been sent to your email.'
+        btnVerify: 'Get data & send code', verifyCode: 'Verification code (4 digits)', verifyMsg: 'Code has been sent to your email.',
+        errBlocked: 'Account blocked for 30 minutes (too many attempts).', errAttempts: 'Wrong code. Attempts left: '
     }
 };
 
@@ -380,7 +383,13 @@ function submitOrder() {
         if (!response.ok) throw new Error("Connection Error");
         const data = await response.json();
         if (!data.valid) {
-            throw new Error(dict[lang]['errInvalidCode']);
+            if (data.blocked) {
+                throw new Error(dict[lang]['errBlocked']);
+            } else if (data.attemptsLeft !== undefined) {
+                throw new Error(dict[lang]['errAttempts'] + data.attemptsLeft);
+            } else {
+                throw new Error(dict[lang]['errInvalidCode']);
+            }
         }
         
         // Step 2: If code is valid, proceed with POST (no-cors)
@@ -407,7 +416,9 @@ function submitOrder() {
         console.error('Error:', error);
         submitBtn.className = "group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-white transition-all duration-200 bg-red-500 font-pj rounded-xl";
         // Show specific error if provided
-        const errMsg = error.message && (error.message.includes('ungültig') || error.message.includes('Invalid') || error.message.includes('Nieprawidłowy')) ? error.message : dict[lang]['msgError'];
+        const knownErrors = [dict[lang]['errBlocked'], dict[lang]['errInvalidCode'], 'ungültig', 'Invalid', 'Nieprawidłowy', 'Konto', 'Account', 'Versuche', 'próby', 'Attempts'];
+        const isKnownError = error.message && knownErrors.some(msg => error.message.includes(msg));
+        const errMsg = isKnownError ? error.message : dict[lang]['msgError'];
         submitBtn.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> ${errMsg}`;
         resetBtn();
     });

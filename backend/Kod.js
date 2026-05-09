@@ -300,17 +300,46 @@ function doGet(e) {
                return ContentService.createTextOutput(JSON.stringify({ error: "Brak adresu email dla tego klienta." })).setMimeType(ContentService.MimeType.JSON);
            }
            
+           // Check if blocked before sending a new code
+           var isBlocked = CacheService.getScriptCache().get("BLOCKED_" + targetId);
+           if (isBlocked) {
+               return ContentService.createTextOutput(JSON.stringify({ error: "Konto zablokowane ze względu na zbyt wiele błędnych prób. Spróbuj ponownie za 30 minut." })).setMimeType(ContentService.MimeType.JSON);
+           }
+           
            // Generate 4-digit code
            var code = Math.floor(1000 + Math.random() * 9000).toString();
            
-           // Store in cache for 15 minutes (900 seconds)
+           // Store in cache for 15 minutes (900 seconds), also reset attempts
            CacheService.getScriptCache().put("VERIFY_" + targetId, code, 900);
+           CacheService.getScriptCache().remove("ATTEMPTS_" + targetId);
            
-           // Send Email
+           // Send HTML Email
            var subject = "TWS Rügen - Verifizierungscode / Kod weryfikacyjny";
-           var body = "Dein Verifizierungscode lautet / Twój kod weryfikacyjny to: " + code + "\n\nDieser Code ist 15 Minuten lang gültig.\nTen kod jest ważny przez 15 minut.";
+           var htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; border: 1px solid #ddd; border-radius: 8px;'>" +
+             "<div style='text-align:center; margin-bottom: 20px;'>" +
+               "<img src='https://www.tws-ruegen.de/files/content/images/logo-tws.png' alt='TWS Logo' style='max-height: 80px;' />" +
+             "</div>" +
+             "<h2 style='color: #003366; text-align: center; margin-bottom: 20px;'>Ihr Verifizierungscode / Twój kod weryfikacyjny</h2>" +
+             "<p style='font-size: 15px; color: #555; text-align: center;'>" +
+               "Bitte geben Sie den folgenden Code in das Bestellformular ein.<br>" +
+               "<span style='font-size: 13px;'>Proszę wprowadzić poniższy kod w formularzu zamówienia.</span>" +
+             "</p>" +
+             "<div style='text-align: center; margin: 30px 0;'>" +
+               "<div style='display: inline-block; background-color: #f1f5f9; border: 2px dashed #003366; padding: 15px 40px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #003366; border-radius: 8px;'>" +
+                 code +
+               "</div>" +
+               "<p style='font-size: 12px; color: #666; margin-top: 10px;'><em>Tipp: Sie können den Code oben einfach markieren und kopieren. / Wskazówka: Możesz łatwo zaznaczyć i skopiować powyższy kod.</em></p>" +
+             "</div>" +
+             "<div style='background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; font-size: 13px; margin-top: 20px; text-align: center;'>" +
+               "<strong>Achtung / Uwaga:</strong><br>" +
+               "Bei 3 falschen Eingaben wird das Konto für 30 Minuten gesperrt.<br>" +
+               "<span style='font-size: 12px;'>Po 3 błędnych próbach wprowadzenia, możliwość zamówienia zostanie zablokowana na 30 minut.</span>" +
+             "</div>" +
+             "<p style='margin-top: 30px; font-size: 12px; color: #666; text-align: center;'>Dieser Code ist 15 Minuten lang gültig.</p>" +
+           "</div>";
+
            try {
-             GmailApp.sendEmail(clientEmail, subject, body);
+             GmailApp.sendEmail(clientEmail, subject, "", { htmlBody: htmlBody });
            } catch (err) {
              return ContentService.createTextOutput(JSON.stringify({ error: "Nie udało się wysłać emaila z kodem." })).setMimeType(ContentService.MimeType.JSON);
            }
@@ -325,11 +354,33 @@ function doGet(e) {
 
   // Verify verification code via GET before POSTing
   if (e.parameter.action === "verifyCode" && e.parameter.clientId && e.parameter.code) {
-    var cachedCode = CacheService.getScriptCache().get("VERIFY_" + e.parameter.clientId);
+    var cache = CacheService.getScriptCache();
+    var clientId = e.parameter.clientId;
+    
+    // Check if blocked
+    var isBlocked = cache.get("BLOCKED_" + clientId);
+    if (isBlocked) {
+      return ContentService.createTextOutput(JSON.stringify({ valid: false, blocked: true })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var cachedCode = cache.get("VERIFY_" + clientId);
+    
     if (cachedCode && cachedCode === String(e.parameter.code).trim()) {
+      cache.remove("ATTEMPTS_" + clientId); // Reset attempts on success
       return ContentService.createTextOutput(JSON.stringify({ valid: true })).setMimeType(ContentService.MimeType.JSON);
     } else {
-      return ContentService.createTextOutput(JSON.stringify({ valid: false })).setMimeType(ContentService.MimeType.JSON);
+      // Increment attempts
+      var attempts = parseInt(cache.get("ATTEMPTS_" + clientId) || "0", 10) + 1;
+      cache.put("ATTEMPTS_" + clientId, attempts.toString(), 900); // store for 15 mins
+      
+      if (attempts >= 3) {
+        // Block for 30 minutes (1800 seconds)
+        cache.put("BLOCKED_" + clientId, "true", 1800);
+        cache.remove("VERIFY_" + clientId); // Remove code
+        return ContentService.createTextOutput(JSON.stringify({ valid: false, blocked: true })).setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ valid: false, attemptsLeft: 3 - attempts })).setMimeType(ContentService.MimeType.JSON);
+      }
     }
   }
 
